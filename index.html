@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Towers of Hanoi with AI</title>
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f0f0f0;
+            font-family: Arial, sans-serif;
+        }
+        #towers {
+            margin-top:30px;
+        }
+        #game-container {
+            text-align: center;
+            height: 85vh;
+            width: 95%;
+            background: rgba(189, 14, 189, 0.808);
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            color: #333;
+        }
+
+        .tower {
+            display: inline-block;
+            border: 2px solid #333;
+            background-color: #ddd;
+            height: 200px;
+            width: 10px;
+            margin: 0 50px;
+            position: relative;
+        }
+        .disk {
+            background-color: #FF5733;
+            border-radius: 5px;
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 200%;
+            height: 20px;
+            transition: bottom 0.5s ease-in-out;
+        }
+        .spacer {
+            display: inline-block;
+            width: 100px;
+            height: 200px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+            margin-top: 20px;
+        }
+
+        button:hover {
+            background-color: #45a049;
+        }
+
+        button[disabled] {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        label {
+            margin-right: 10px;
+        }
+
+        input[type="number"] {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+        }
+        #solve-button {
+            margin-top: 20px;
+            background-color: #007bff;
+            color: white;
+        }
+
+        #solve-button:hover {
+            background-color: #0056b3;
+        }
+
+        #solve-button:disabled {
+            background-color: #ccc;
+            color: #666;
+            cursor: not-allowed;
+        }
+        .input-container {
+            display: inline-block;
+            margin-top: 10px;
+        }
+
+        .input-container input[type="number"] {
+            padding: 3px;
+            border: 2px solid #007bff;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+            font-size: 16px;
+            width: 60px;
+            text-align: left;
+            transition: border-color 0.3s;
+        }
+
+        .input-container input[type="number"]:hover {
+            border-color: #0056b3;
+        }
+
+        .input-container input[type="number"]:focus {
+            outline: none;
+            border-color: #0056b3;
+            box-shadow: 0 0 5px rgba(0, 123, 255, 0.5);
+        }
+
+
+    </style>
+</head>
+<body>
+<div id="game-container">
+    <h1>Towers of Hanoi</h1>
+    <div class="input-container">
+        <label for="disk-number">Number of Disks:</label>
+        <input type="number" id="disk-number" min="1" max="10" value="5">
+        <button id="set-disk-button" onclick="setNumberOfDisks()">Set</button>
+    </div>
+    <div id="towers">
+        <div class="tower" id="tower1"></div>
+        <div class="spacer"></div>
+        <div class="tower" id="tower2"></div>
+        <div class="spacer"></div>
+        <div class="tower" id="tower3"></div>
+    </div>
+    <button id="solve-button" onclick="solve()">Solve</button>
+</div>
+
+<script>
+    let NUM_DISKS = 5;
+    let moves = 0;
+    let solving = false;
+
+    const initialTowers = {
+        A: [],
+        B: [],
+        C: []
+    };
+
+    const draw = () => {
+        const towerIds = ['tower1', 'tower2', 'tower3'];
+        towerIds.forEach((towerId, index) => {
+            const tower = document.getElementById(towerId);
+            const disks = towers[String.fromCharCode(65 + index)];
+            tower.innerHTML = "";
+            disks.forEach((diskSize, index) => {
+                const disk = document.createElement('div');
+                disk.className = 'disk';
+                disk.style.backgroundColor = `hsl(${index * 20}, 70%, 50%)`;
+                disk.style.width = `${diskSize * 20}px`;
+                disk.style.bottom = `${index * 25}px`;
+                tower.appendChild(disk);
+            });
+        });
+    };
+
+    const moveDisk = (source, destination) => {
+        const disk = towers[source].pop();
+        towers[destination].push(disk);
+        draw();
+        return new Promise(resolve => {
+            setTimeout(resolve, 500);
+        });
+    };
+
+    const towerOfHanoi = async (n, source, auxiliary, destination) => {
+        if (n === 1) {
+            await moveDisk(source, destination);
+            moves++;
+        } else {
+            await towerOfHanoi(n - 1, source, destination, auxiliary);
+            await moveDisk(source, destination);
+            moves++;
+            await towerOfHanoi(n - 1, auxiliary, source, destination);
+        }
+    };
+
+    const solve = async () => {
+        if (solving) return;
+        solving = true;
+        document.getElementById('solve-button').disabled = true;
+        document.getElementById('set-disk-button').disabled = true;
+        moves = 0;
+        // Reset towers to initial state
+        towers = JSON.parse(JSON.stringify(initialTowers));
+        draw();
+        await towerOfHanoi(NUM_DISKS, 'A', 'B', 'C');
+        alert(`Tower of Hanoi solved in ${moves} moves!`);
+        solving = false;
+        document.getElementById('solve-button').disabled = false;
+        document.getElementById('set-disk-button').disabled = false;
+    };
+
+
+    const setNumberOfDisks = () => {
+
+        if (solving) return;
+
+        NUM_DISKS = parseInt(document.getElementById('disk-number').value);
+        initialTowers.A = [];
+        for (let i = NUM_DISKS; i >= 1; i--) {
+            initialTowers.A.push(i);
+        }
+        towers = JSON.parse(JSON.stringify(initialTowers));
+        draw();
+    };
+
+</script>
+</body>
+</html>
